@@ -278,6 +278,12 @@
 
 #*****************************************************************************************************
 
+  - name: ensure_notification_permission
+    type: function
+    desc: Shows notification permission dialog if necessary.
+
+#*****************************************************************************************************
+
   - name: NOTIFICATION_BADGE
     type: number
     desc: Badge notification type.

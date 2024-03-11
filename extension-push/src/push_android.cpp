@@ -35,6 +35,7 @@ struct Push
     jmethodID            m_Schedule;
     jmethodID            m_Cancel;
     jmethodID            m_CancelAllIssued;
+    jmethodID            m_ensureNotificationPermission;
 
     dmScript::LuaCallbackInfo* m_Callback;
     dmScript::LuaCallbackInfo* m_Listener;
@@ -77,6 +78,18 @@ static int Push_SetListener(lua_State* L)
     JNIEnv* env = threadAttacher.GetEnv();
 
     env->CallVoidMethod(g_Push.m_Push, g_Push.m_FlushStored);
+
+    return 0;
+}
+
+static int Push_EnsureNotificationPermission(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 0);
+
+    dmAndroid::ThreadAttacher threadAttacher;
+    JNIEnv* env = threadAttacher.GetEnv();
+
+    env->CallBooleanMethod(g_Push.m_Push, g_Push.m_ensureNotificationPermission, dmGraphics::GetNativeAndroidActivity(), 0);
 
     return 0;
 }
@@ -340,6 +353,7 @@ static const luaL_reg Push_methods[] =
 {
     {"register", Push_Register},
     {"set_listener", Push_SetListener},
+    {"ensure_notification_permission", Push_EnsureNotificationPermission},
 
     {"schedule", Push_Schedule},
     {"cancel", Push_Cancel},
@@ -498,6 +512,7 @@ static dmExtension::Result AppInitializePush(dmExtension::AppParams* params)
     g_Push.m_Schedule = env->GetMethodID(push_class, "scheduleNotification", "(Landroid/app/Activity;IJLjava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V");
     g_Push.m_Cancel = env->GetMethodID(push_class, "cancelNotification", "(Landroid/app/Activity;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V");
     g_Push.m_CancelAllIssued = env->GetMethodID(push_class, "cancelAllIssued", "(Landroid/app/Activity;)V");
+    g_Push.m_ensureNotificationPermission = env->GetMethodID(push_class, "ensureNotificationPermission", "(Landroid/app/Activity;I)Z");
 
     jmethodID get_instance_method = env->GetStaticMethodID(push_class, "getInstance", "()Lcom/defold/push/Push;");
     g_Push.m_Push = env->NewGlobalRef(env->CallStaticObjectMethod(push_class, get_instance_method));

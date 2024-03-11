@@ -38,7 +38,14 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Build;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ActivityCompat;
 import android.util.Log;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.Manifest;
+import androidx.core.content.ContextCompat;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission;
 
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.ConnectionResult;
@@ -79,8 +86,7 @@ public class Push {
         public boolean wasLocal = false;
         public boolean wasActivated = false;
 
-        public StoredNotification(String json, int id, boolean wasLocal, boolean wasActivated)
-        {
+        public StoredNotification(String json, int id, boolean wasLocal, boolean wasActivated) {
             this.json = json;
             this.id = id;
             this.wasLocal = wasLocal;
@@ -90,6 +96,7 @@ public class Push {
 
     private static ActivityListener defoldActivityListenerInstance;
     private static boolean defoldActivityVisible;
+
     public static boolean isDefoldActivityVisible() {
         Log.d(TAG, "Tracking Activity isVisible= " + defoldActivityVisible);
         return defoldActivityVisible;
@@ -99,14 +106,14 @@ public class Push {
         public final void onActivityResumed(Activity activity) {
             if (activity.getLocalClassName().equals(DEFOLD_ACTIVITY)) {
                 defoldActivityVisible = true;
-                Log.d(TAG, "Tracking Activity Resumed "+activity.getLocalClassName());
+                Log.d(TAG, "Tracking Activity Resumed " + activity.getLocalClassName());
             }
         }
 
         public final void onActivityPaused(Activity activity) {
             if (activity.getLocalClassName().equals(DEFOLD_ACTIVITY)) {
                 defoldActivityVisible = false;
-                Log.d(TAG, "Tracking Activity Paused "+activity.getLocalClassName());
+                Log.d(TAG, "Tracking Activity Paused " + activity.getLocalClassName());
             }
         }
 
@@ -133,17 +140,20 @@ public class Push {
 
     private ArrayList<StoredNotification> storedNotifications = new ArrayList<StoredNotification>();
 
-    public void start(Activity activity, IPushListener listener, String senderId, String applicationId, String projectTitle) {
+    public void start(Activity activity, IPushListener listener, String senderId, String applicationId,
+            String projectTitle) {
         Log.d(TAG, String.format("Push started (%s %s)", listener, senderId));
 
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, projectTitle, NotificationManager.IMPORTANCE_DEFAULT);
+            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, projectTitle,
+                    NotificationManager.IMPORTANCE_DEFAULT);
             channel.enableVibration(true);
             channel.setDescription("");
 
-            NotificationManager notificationManager = (NotificationManager)activity.getSystemService(NotificationManager.class);
+            NotificationManager notificationManager = (NotificationManager) activity
+                    .getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
         this.activity = activity;
@@ -240,7 +250,8 @@ public class Push {
         }
     }
 
-    private void putValues(Bundle extras, int uid, String title, String message, String payload, long timestamp, int priority, int iconSmall, int iconLarge) {
+    private void putValues(Bundle extras, int uid, String title, String message, String payload, long timestamp,
+            int priority, int iconSmall, int iconLarge) {
         extras.putInt("uid", uid);
         extras.putString("title", title);
         extras.putString("message", message);
@@ -258,8 +269,9 @@ public class Push {
             return null;
         }
         Bundle extras = new Bundle();
-        putValues(extras, jo.optInt("uid"), jo.optString("title"), jo.optString("message"), jo.optString("payload"), jo.optLong("timestamp"),
-                    jo.optInt("priority"), jo.optInt("smallIcon"), jo.optInt("largeIcon"));
+        putValues(extras, jo.optInt("uid"), jo.optString("title"), jo.optString("message"), jo.optString("payload"),
+                jo.optLong("timestamp"),
+                jo.optInt("priority"), jo.optInt("smallIcon"), jo.optInt("largeIcon"));
         return extras;
     }
 
@@ -277,11 +289,11 @@ public class Push {
         ApplicationInfo info = appContext.getApplicationInfo();
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(appContext, Push.NOTIFICATION_CHANNEL_ID)
-            .setContentTitle(extras.getString("title"))
-            .setContentText(extras.getString("message"))
-            .setContentIntent(contentIntent)
-            .setPriority(extras.getInt("priority"))
-            .setWhen(extras.getLong("timestamp"));
+                .setContentTitle(extras.getString("title"))
+                .setContentText(extras.getString("message"))
+                .setContentIntent(contentIntent)
+                .setPriority(extras.getInt("priority"))
+                .setWhen(extras.getLong("timestamp"));
 
         builder.getExtras().putInt("uid", uid);
 
@@ -316,7 +328,7 @@ public class Push {
         Notification notification = builder.build();
         notification.defaults = Notification.DEFAULT_ALL;
         notification.flags |= Notification.FLAG_AUTO_CANCEL;
-  
+
         return notification;
     }
 
@@ -328,18 +340,21 @@ public class Push {
                 continue;
             }
 
-            // These notifications are already registered with the AlarmManager, we just need to store them internally again
+            // These notifications are already registered with the AlarmManager, we just
+            // need to store them internally again
             JSONObject jo = readJson(activity, path);
             if (jo == null) {
                 Log.e(TAG, String.format("Failed to load local pending notification: %s", path));
                 return;
             }
-            this.listener.addPendingNotifications(jo.optInt("uid"), jo.optString("title"), jo.optString("message"), jo.optString("payload"),
-                                                jo.optLong("timestamp"), jo.optInt("priority"));
+            this.listener.addPendingNotifications(jo.optInt("uid"), jo.optString("title"), jo.optString("message"),
+                    jo.optString("payload"),
+                    jo.optLong("timestamp"), jo.optInt("priority"));
         }
     }
 
-    public void scheduleNotification(final Activity activity, int uid, long timestampMillis, String title, String message, String payload, int priority) {
+    public void scheduleNotification(final Activity activity, int uid, long timestampMillis, String title,
+            String message, String payload, int priority) {
 
         if (am == null) {
             am = (AlarmManager) activity.getSystemService(activity.ALARM_SERVICE);
@@ -369,14 +384,13 @@ public class Push {
             } else {
                 am.set(AlarmManager.RTC_WAKEUP, timestampMillis, pendingIntent);
             }
-        }
-        catch(java.lang.SecurityException e) {
+        } catch (java.lang.SecurityException e) {
             Log.e(TAG, "Failed to schedule notification", e);
         }
     }
 
-    public void cancelNotification(final Activity activity, int notificationId, String title, String message, String payload, int priority)
-    {
+    public void cancelNotification(final Activity activity, int notificationId, String title, String message,
+            String payload, int priority) {
         if (am == null) {
             am = (AlarmManager) activity.getSystemService(activity.ALARM_SERVICE);
         }
@@ -394,9 +408,9 @@ public class Push {
         am.cancel(pendingIntent);
     }
 
-    public void cancelAllIssued(final Activity activity)
-    {
-        NotificationManager notificationManager = (NotificationManager)activity.getSystemService(NotificationManager.class);
+    public void cancelAllIssued(final Activity activity) {
+        NotificationManager notificationManager = (NotificationManager) activity
+                .getSystemService(NotificationManager.class);
         notificationManager.cancelAll();
     }
 
@@ -473,7 +487,8 @@ public class Push {
     }
 
     private void loadSavedMessages(Context context) {
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(context.openFileInput(SAVED_PUSH_MESSAGE_NAME)))) {
+        try (BufferedReader r = new BufferedReader(
+                new InputStreamReader(context.openFileInput(SAVED_PUSH_MESSAGE_NAME)))) {
             boolean wasActivated = Boolean.parseBoolean(r.readLine());
             String json = "";
             String line = r.readLine();
@@ -492,7 +507,8 @@ public class Push {
     }
 
     private void loadSavedLocalMessages(Context context) {
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(context.openFileInput(SAVED_LOCAL_MESSAGE_NAME)))) {
+        try (BufferedReader r = new BufferedReader(
+                new InputStreamReader(context.openFileInput(SAVED_LOCAL_MESSAGE_NAME)))) {
             int id = Integer.parseInt(r.readLine());
             boolean wasActivated = Boolean.parseBoolean(r.readLine());
             String json = "";
@@ -536,7 +552,8 @@ public class Push {
 
     // https://stackoverflow.com/a/37728241/468516
     private String getJson(final Bundle bundle) {
-        if (bundle == null) return null;
+        if (bundle == null)
+            return null;
         JSONObject jsonObject = new JSONObject();
 
         for (String key : bundle.keySet()) {
@@ -603,8 +620,7 @@ public class Push {
     void onRemotePush(Context context, String payload, boolean wasActivated) {
         if (listener != null) {
             listener.onMessage(payload, wasActivated);
-        }
-        else {
+        } else {
             PrintStream os = null;
             try {
                 os = new PrintStream(context.openFileOutput(Push.SAVED_PUSH_MESSAGE_NAME, Context.MODE_PRIVATE));
@@ -630,8 +646,7 @@ public class Push {
         if (listener != null) {
             removeNotification(id);
             listener.onLocalMessage(msg, id, wasActivated);
-        }
-        else {
+        } else {
             PrintStream os = null;
             try {
                 os = new PrintStream(context.openFileOutput(Push.SAVED_LOCAL_MESSAGE_NAME, Context.MODE_PRIVATE));
@@ -664,7 +679,7 @@ public class Push {
         intent.putExtra("payload", payloadString);
 
         Bundle extrasBundle = intent.getExtras();
-        extrasBundle.putByte("remote", (byte)1);
+        extrasBundle.putByte("remote", (byte) 1);
 
         int id = (int) (System.currentTimeMillis() % Integer.MAX_VALUE);
         final int flags = createPendingIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
@@ -741,6 +756,24 @@ public class Push {
         notification.defaults = Notification.DEFAULT_ALL;
         notification.flags |= Notification.FLAG_AUTO_CANCEL;
         nm.notify(id, notification);
+    }
+
+    public boolean ensureNotificationPermission(final Activity activity, int requestCode) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
+            return true;
+
+        String permission = Manifest.permission.POST_NOTIFICATIONS;
+        boolean granted = ContextCompat.checkSelfPermission(activity.getApplicationContext(),
+                permission) == PackageManager.PERMISSION_GRANTED;
+
+        if (granted)
+            return true;
+
+        if (ActivityCompat.shouldShowRequestPermissionRationale(activity, permission) || true) {
+            ActivityCompat.requestPermissions(activity, new String[] {permission}, requestCode);
+            return false;
+        }
+        return false;
     }
 
 }

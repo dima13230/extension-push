@@ -9,3 +9,8 @@ Thumbs.db
 .cproject
 builtins
 _site
+.vscode
+.gradle
+*.keystore
+*.der
+debug.keystore.pass.txt
