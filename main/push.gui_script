@@ -206,7 +206,8 @@ function on_input(self, action_id, action)
 			push.cancel_all_issued()
 		end)
 		dirtylarry:button("requestnotificationpermission", action_id, action, function()
-			push.ensure_notification_permission()
+			local res = push.ensure_notification_permission(13230)
+			set_text("%s", res and "true" or "false")
 		end)
 	end
 end

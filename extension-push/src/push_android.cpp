@@ -6,6 +6,8 @@
 #include <dmsdk/dlib/android.h>
 #include "push_utils.h"
 
+#include <android/log.h>
+
 #define LIB_NAME "push"
 
 struct ScheduledNotification
@@ -46,6 +48,18 @@ struct Push
 
 static Push g_Push;
 
+void printLuaStackTop(lua_State* L) {
+    // Get the Lua stack top
+    int stackTop = lua_gettop(L);
+
+    // Convert the integer stackTop to a string
+    char text[50]; // Adjust the size according to your needs
+    snprintf(text, sizeof(text), "Lua stack top: %d", stackTop);
+
+    // Print the string using __android_log_print
+    __android_log_print(ANDROID_LOG_VERBOSE, LIB_NAME, "%s", text);
+}
+
 static int Push_Register(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 0);
@@ -84,14 +98,17 @@ static int Push_SetListener(lua_State* L)
 
 static int Push_EnsureNotificationPermission(lua_State* L)
 {
-    DM_LUA_STACK_CHECK(L, 0);
+    DM_LUA_STACK_CHECK(L, 1);
+
+    int requestCode = luaL_checkinteger(L, 1);
 
     dmAndroid::ThreadAttacher threadAttacher;
     JNIEnv* env = threadAttacher.GetEnv();
 
-    env->CallBooleanMethod(g_Push.m_Push, g_Push.m_ensureNotificationPermission, dmGraphics::GetNativeAndroidActivity(), 0);
+    jboolean result = env->CallBooleanMethod(g_Push.m_Push, g_Push.m_ensureNotificationPermission, dmGraphics::GetNativeAndroidActivity(), requestCode);
+    lua_pushboolean(L, (bool)result);
 
-    return 0;
+    return 1;
 }
 
 static int Push_Schedule(lua_State* L)

@@ -40,12 +40,9 @@ import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ActivityCompat;
 import android.util.Log;
-import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.Manifest;
 import androidx.core.content.ContextCompat;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts.RequestPermission;
 
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.ConnectionResult;
@@ -769,9 +766,8 @@ public class Push {
         if (granted)
             return true;
 
-        if (ActivityCompat.shouldShowRequestPermissionRationale(activity, permission) || true) {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)) {
             ActivityCompat.requestPermissions(activity, new String[] {permission}, requestCode);
-            return false;
         }
         return false;
     }
