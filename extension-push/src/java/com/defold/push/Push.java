@@ -766,10 +766,17 @@ public class Push {
         if (granted)
             return true;
 
-        if (ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)) {
-            ActivityCompat.requestPermissions(activity, new String[] {permission}, requestCode);
-        }
+        ActivityCompat.requestPermissions(activity, new String[] {permission}, requestCode);
+        
         return false;
     }
 
+    public boolean shouldShowRequestNotificationPermissionRationale(final Activity activity) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
+            return true;
+
+        String permission = Manifest.permission.POST_NOTIFICATIONS;
+
+        return ActivityCompat.shouldShowRequestPermissionRationale(activity, permission);
+    }
 }
