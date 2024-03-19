@@ -116,7 +116,7 @@ static int Push_ShouldShowRequestNotificationPermissionRationale(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 1);
 
-    dmAndroid:ThreadAttacher threadAttacher;
+    dmAndroid::ThreadAttacher threadAttacher;
     JNIEnv* env = threadAttacher.GetEnv();
 
     jboolean result = env->CallBooleanMethod(g_Push.m_Push, g_Push.m_ShouldShowRequestNotificationPermissionRationale, dmGraphics::GetNativeAndroidActivity(), requestCode);
