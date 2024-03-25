@@ -33,6 +33,18 @@
             </intent-filter>
         </activity>
 
+        <!-- For showing notification permission requests -->
+        <activity android:name="com.defold.push.PushPermissionActivity"
+            android:theme="@style/Theme.AppCompat.Translucent"
+            android:launchMode="singleTask"
+            android:exported="false"
+            android:configChanges="keyboardHidden|orientation|screenSize">
+            <intent-filter>
+                <action android:name="com.defold.push.REQUEST_PERMISSION" />
+                <category android:name="com.defold.push" />
+            </intent-filter>
+        </activity>
+
         <!-- For Firebase Cloud Messaging -->
         <service android:enabled="true" android:exported="true" android:name="com.defold.push.FirebaseMessagingService">
             <intent-filter>

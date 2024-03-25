@@ -1,7 +1,7 @@
 script: "/main/push.gui_script"
 fonts {
   name: "headline"
-  font: "/builtins/fonts/system_font.font"
+  font: "/builtins/fonts/default.font"
 }
 background_color {
   x: 0.0

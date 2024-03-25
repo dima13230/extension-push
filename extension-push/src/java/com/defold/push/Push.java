@@ -37,12 +37,13 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Build;
+import android.provider.Settings;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ActivityCompat;
 import android.util.Log;
 import android.content.DialogInterface;
 import android.Manifest;
-import androidx.core.content.ContextCompat;
+import androidx.core.content.ContextCompat; 
 
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.ConnectionResult;
@@ -60,6 +61,7 @@ public class Push {
     public static final String TAG = "push";
     public static final String DEFOLD_ACTIVITY = "com.dynamo.android.DefoldActivity";
     public static final String ACTION_FORWARD_PUSH = "com.defold.push.FORWARD";
+    public static final String ACTION_PERMISSION_REQUEST = "com.defold.push.REQUEST_PERMISSION";
     public static final String SAVED_PUSH_MESSAGE_NAME = "saved_push_message";
     public static final String SAVED_LOCAL_MESSAGE_NAME = "saved_local_message";
     public static final String NOTIFICATION_CHANNEL_ID = "com.dynamo.android.notification_channel";
@@ -756,27 +758,11 @@ public class Push {
     }
 
     public boolean ensureNotificationPermission(final Activity activity, int requestCode) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
-            return true;
 
-        String permission = Manifest.permission.POST_NOTIFICATIONS;
-        boolean granted = ContextCompat.checkSelfPermission(activity.getApplicationContext(),
-                permission) == PackageManager.PERMISSION_GRANTED;
-
-        if (granted)
-            return true;
-
-        ActivityCompat.requestPermissions(activity, new String[] {permission}, requestCode);
-        
-        return false;
-    }
-
-    public boolean shouldShowRequestNotificationPermissionRationale(final Activity activity) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
-            return true;
-
-        String permission = Manifest.permission.POST_NOTIFICATIONS;
-
-        return ActivityCompat.shouldShowRequestPermissionRationale(activity, permission);
+        //Intent intent = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
+        Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+        intent.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+        //intent.putExtra(Settings.EXTRA_CHANNEL_ID, myNotificationChannel.getId());
+        activity.startActivity(intent);
     }
 }
